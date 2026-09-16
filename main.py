@@ -126,7 +126,6 @@ fig4 = px.scatter(
     },
 )
 
-# 마우스오버 스타일 지정
 fig4.update_traces(
     hovertemplate="<b>%{hovertext}</b><br>개봉일 스크린수: %{x:,}개<br>총 관객수: %{y:,}명"
 )
@@ -136,4 +135,39 @@ st.plotly_chart(fig4, use_container_width=True)
 st.markdown("##### 📌 이 그래프로 알 수 있는 것")
 st.write(
     "개봉일 스크린수가 많을수록 총 관객수도 대체로 증가하는 양(+)의 상관관계를 보이지만, 아바타:불과 재와 왕과 사는 남자를 비교했을 때 상대적으로 스크린수가 많지만 관객 수가 적어 보일 수도 있고, 상대적으로 스크린수가 적지만 관객 수가 많아 보일 수도 있다."
+)
+
+st.divider()
+
+# ----------------------------------------------------
+# 다섯 번째 그래프: 장르별 총 관객수 분포 (박스플롯)
+# ----------------------------------------------------
+st.subheader("5. 주요 장르별 총 관객수 분포 (영화 10편 이상)")
+
+# 영화 수가 10편 이상인 장르만 필터링
+genre_counts_series = df["genre"].value_counts()
+top_genres = genre_counts_series[genre_counts_series >= 10].index
+df_filtered = df[df["genre"].isin(top_genres)]
+
+# 박스플롯 생성 (points="outliers"로 이상치 점 표출, hover_name으로 점에 영화명 표시)
+fig5 = px.box(
+    df_filtered,
+    x="genre",
+    y="total_audi",
+    color="genre",
+    hover_name="movieNm",
+    points="outliers",
+    title="주요 장르별 총 관객수 상자 그림 (Outliers 표출)",
+    labels={"genre": "장르", "total_audi": "총 관객수(명)"},
+)
+
+fig5.update_traces(
+    hovertemplate="<b>%{hovertext}</b><br>장르: %{x}<br>관객수: %{y:,}명"
+)
+
+st.plotly_chart(fig5, use_container_width=True)
+
+st.markdown("##### 📌 이 그래프로 알 수 있는 것")
+st.write(
+    "이 공간은 깊은 생각을 해보고 다시 적어야 한당"
 )
