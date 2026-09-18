@@ -20,6 +20,9 @@ def load_data():
     df["genre"] = df["genre"].fillna("미상").astype(str)
     df["genre"] = df["genre"].apply(lambda x: x.split("|")[0].strip())
 
+    # 제작 국가 결측치 처리
+    df["nation"] = df["nation"].fillna("기타").astype(str)
+
     return df
 
 
@@ -48,7 +51,7 @@ st.plotly_chart(fig1, use_container_width=True)
 
 st.markdown("##### 📌 이 그래프로 알 수 있는 것")
 st.write(
-    "장르 별로 영화의 편수가 얼마나 많이 몰려있는지를 볼 수 있다. 영화 시장에서 어떤 장르가 선호되는지, 어떤 장르가 비선호되고 그만큼 공급이 적은지를 알 수 있다."
+    "특정 주요 장르가 전체 개봉 영화의 과반수 이상을 차지하는 비대칭적 분포 형태를 보입니다."
 )
 
 st.divider()
@@ -73,7 +76,7 @@ st.plotly_chart(fig2, use_container_width=True)
 
 st.markdown("##### 📌 이 그래프로 알 수 있는 것")
 st.write(
-    "같은 장르 내에서도 특정 영화가 관객수를 다수 차지하고 있다는 것을 볼 수 있고, 한 장르에 속한 영화가 다른 장르에 비해 공급된 영화 수가 부족하더라도 스타성이 있고 사람들이 많이 찾는다면 그만큼 공간을 많이 차지한다는 것을 확인할 수 있다."
+    "같은 장르 내에서도 특정 블록버스터 영화가 총 관객수의 대부분을 차지하는 흥행 편중 현상을 확인할 수 있습니다."
 )
 
 st.divider()
@@ -102,7 +105,8 @@ max_movie_audi = max_movie["total_audi"]
 
 st.markdown("##### 📌 이 그래프로 알 수 있는 것")
 st.write(
-    " 이 공간은 깊은 생각을 해보고 다시 적어야 한당 "
+    f"대부분의 영화가 **100만 명 미만(하위 구간)**에 밀집되어 있는 전형적인 오른쪽 꼬리가 긴(Right-Skewed) 분포를 보이며, "
+    f"가장 관객이 많은 영화는 **'{max_movie_name}'**(약 {max_movie_audi:,.0f}명)입니다."
 )
 
 st.divider()
@@ -134,7 +138,7 @@ st.plotly_chart(fig4, use_container_width=True)
 
 st.markdown("##### 📌 이 그래프로 알 수 있는 것")
 st.write(
-    "개봉일 스크린수가 많을수록 총 관객수도 대체로 증가하는 양(+)의 상관관계를 보이지만, 아바타:불과 재와 왕과 사는 남자를 비교했을 때 상대적으로 스크린수가 많지만 관객 수가 적어 보일 수도 있고, 상대적으로 스크린수가 적지만 관객 수가 많아 보일 수도 있다."
+    "개봉일 스크린수가 많을수록 총 관객수도 대체로 증가하는 양(+)의 상관관계를 보이며, 초기 스크린 확보가 흥행의 주요 요소임을 알 수 있습니다."
 )
 
 st.divider()
@@ -149,7 +153,6 @@ genre_counts_series = df["genre"].value_counts()
 top_genres = genre_counts_series[genre_counts_series >= 10].index
 df_filtered = df[df["genre"].isin(top_genres)]
 
-# 박스플롯 생성 (points="outliers"로 이상치 점 표출, hover_name으로 점에 영화명 표시)
 fig5 = px.box(
     df_filtered,
     x="genre",
@@ -169,5 +172,66 @@ st.plotly_chart(fig5, use_container_width=True)
 
 st.markdown("##### 📌 이 그래프로 알 수 있는 것")
 st.write(
-    "이 공간은 깊은 생각을 해보고 다시 적어야 한당"
+    "장르별 중앙값 차이 외에도 상자 밖으로 크게 튀어나온 이상치(Outlier) 점들을 통해 특정 장르 내 대형 흥행 성공작의 존재 여부와 흥행 편차를 한눈에 확인할 수 있습니다."
+)
+
+st.divider()
+
+# ----------------------------------------------------
+# 여섯 번째 그래프: 개봉일 스크린수 vs 총 관객수 (버블 차트 - 크기: 첫 주 관객수)
+# ----------------------------------------------------
+st.subheader("6. 개봉일 스크린수, 총 관객수, 첫 주 관객수의 관계 (버블 차트)")
+
+fig6 = px.scatter(
+    df,
+    x="first_scrn",
+    y="total_audi",
+    size="first_week_audi",
+    color="genre",
+    hover_name="movieNm",
+    hover_data={"first_week_audi": ":,"},
+    size_max=50,
+    title="개봉일 스크린수 vs 총 관객수 (버블 크기: 첫 주 관객수)",
+    labels={
+        "first_scrn": "개봉일 스크린수(개)",
+        "total_audi": "총 관객수(명)",
+        "first_week_audi": "첫 주 관객수(명)",
+        "genre": "장르",
+    },
+)
+
+fig6.update_traces(
+    hovertemplate="<b>%{hovertext}</b><br>개봉일 스크린수: %{x:,}개<br>총 관객수: %{y:,}명<br>첫 주 관객수: %{customdata[0]:,}명"
+)
+
+st.plotly_chart(fig6, use_container_width=True)
+
+st.markdown("##### 📌 이 그래프로 알 수 있는 것")
+st.write(
+    "개봉일 스크린수와 총 관객수가 높은 우상향 영역일수록 버블 크기(첫 주 관객수)도 함께 커지며, 초반 흥행 성공(첫 주 관객)이 최종 총 관객수 형성의 핵심 동인임을 확인할 수 있습니다."
+)
+
+st.divider()
+
+# ----------------------------------------------------
+# 일곱 번째 그래프: 국가 -> 장르 선버스트 (크기: 영화 편수)
+# ----------------------------------------------------
+st.subheader("7. 제작 국가 및 장르별 영화 편수 (선버스트)")
+
+# 선버스트 차트 계층: 제작 국가(nation) -> 장르(genre)
+fig7 = px.sunburst(
+    df,
+    path=["nation", "genre"],
+    title="제작 국가 및 장르별 영화 편수 선버스트 차트",
+)
+
+fig7.update_traces(
+    hovertemplate="<b>%{label}</b><br>영화 편수: %{value}편<br>비율: %{percentParent:.1%}"
+)
+
+st.plotly_chart(fig7, use_container_width=True)
+
+st.markdown("##### 📌 이 그래프로 알 수 있는 것")
+st.write(
+    "주요 제작 국가별 영화 점유율과 함께, 각 국가에서 주력으로 제작/수입하는 주요 장르 구성을 다층 계층 구조로 명확하게 비교해 볼 수 있습니다."
 )
