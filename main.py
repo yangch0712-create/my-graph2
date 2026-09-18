@@ -23,6 +23,31 @@ def load_data():
     # 제작 국가 결측치 처리
     df["nation"] = df["nation"].fillna("기타").astype(str)
 
+    # openDt(개봉일) 파싱 및 계절 컬럼 생성
+    df["openDt_str"] = df["openDt"].astype(str)
+    df["open_date"] = pd.to_datetime(df["openDt_str"], format="%Y%m%d", errors="coerce")
+
+    # 만약 포맷이 안 맞는 경우 자동 처리
+    if df["open_date"].isna().all():
+        df["open_date"] = pd.to_datetime(df["openDt_str"], errors="coerce")
+
+    df["month"] = df["open_date"].dt.month
+
+    # 계절 매핑 함수
+    def get_season(month):
+        if month in [3, 4, 5]:
+            return "봄 (3~5월)"
+        elif month in [6, 7, 8]:
+            return "여름 (6~8월)"
+        elif month in [9, 10, 11]:
+            return "가을 (9~11월)"
+        elif month in [12, 1, 2]:
+            return "겨울 (12~2월)"
+        else:
+            return "기타"
+
+    df["season"] = df["month"].apply(get_season)
+
     return df
 
 
@@ -218,7 +243,6 @@ st.divider()
 # ----------------------------------------------------
 st.subheader("7. 제작 국가 및 장르별 영화 편수 (선버스트)")
 
-# 선버스트 차트 계층: 제작 국가(nation) -> 장르(genre)
 fig7 = px.sunburst(
     df,
     path=["nation", "genre"],
@@ -234,4 +258,32 @@ st.plotly_chart(fig7, use_container_width=True)
 st.markdown("##### 📌 이 그래프로 알 수 있는 것")
 st.write(
     "주요 제작 국가별 영화 점유율과 함께, 각 국가에서 주력으로 제작/수입하는 주요 장르 구성을 다층 계층 구조로 명확하게 비교해 볼 수 있습니다."
+)
+
+st.divider()
+
+# ----------------------------------------------------
+# 여덟 번째 그래프: 계절별 영화 트리맵
+# ----------------------------------------------------
+st.subheader("8. 계절별 사람들이 많이 찾는 영화는 무엇인가")
+
+# 트리맵 생성 (계층 구조: 계절 -> 영화명, 크기: 총 관객수)
+fig8 = px.treemap(
+    df,
+    path=[px.Constant("전체 계절"), "season", "movieNm"],
+    values="total_audi",
+    title="계절별 사람들이 많이 찾는 영화는 무엇인가",
+)
+
+# 마우스오버 시 계절/영화명과 총 관객수가 표시되도록 설정
+fig8.update_traces(
+    hovertemplate="<b>%{label}</b><br>총 관객수: %{value:,.0f}명",
+    texttemplate="%{label}",
+)
+
+st.plotly_chart(fig8, use_container_width=True)
+
+st.markdown("##### 📌 이 그래프로 알 수 있는 것")
+st.write(
+    "여름과 겨울 등 극장가 성수기에 개봉한 특정 초대형 흥행작들이 전체 관객수의 상당 비중을 차지하며, 계절별 흥행 대작의 규모를 한눈에 파악할 수 있습니다."
 )
